@@ -1,9 +1,6 @@
 # my $file = open "example.txt", :r;
 my $file = open "input.txt", :r;
 
-my $nb0 = 0;
-my $nb = 50;
-
 grammar Parser {
     rule TOP { <range>[','<range>]* }
     rule range { <first-id>'-'<last-id> }
