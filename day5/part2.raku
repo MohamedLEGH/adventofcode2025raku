@@ -54,7 +54,6 @@ sub fusing-intervals(@intervals) {
 	for 0..@intervals.elems -> $i {
 		for $i..@intervals.elems -> $j {
 			if $i != $j {
-				# say $i," ",$j;
 				my $new-interval = fuse-interval(@intervals[$i], @intervals[$j]);
 				if $new-interval {
 					@new-list-intervals.splice($i, 1);
