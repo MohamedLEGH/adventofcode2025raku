@@ -1,4 +1,5 @@
-use Math::Interval;
+# my $content = "example.txt".IO.slurp; 
+my $content = "input.txt".IO.slurp; 
 
 grammar Parser {
     rule TOP { <min-val>'-'<max-val> }
@@ -28,71 +29,54 @@ sub fuse-interval($inter1, $inter2) {
 	if $inter2.max >= $inter1.min and $inter2.min <= $inter1.min and $inter2.max <= $inter1.max {
 		return $inter2.min..$inter1.max;
 	}
-	return "No overlap";
-	# > return $inter2
-	# if $inter2 in $inter1
-	# > return $inter1
-	# if $inter1.max >= $inter2.min
-	# AND $inter1.min <= $inter2.min
-	# some overlap
-	# return ($inter1.min, $inter2.max)
-	# if $inter1.max >= $inter2.max
-	# AND $inter1.min >= $inter2.min
-	# some overlap
-	# return ($inter2.min, $inter1.max)
-	# Else no overlap
-	# return "No overlap"
+	return False;
 }
-
-my $content = "example.txt".IO.slurp; 
-# my $content = "input.txt".IO.slurp; 
 
 my @split-text = $content.split("\n\n");
 my @id-ranges = @split-text[0].split("\n");
-# my @ingredients = @split-text[1].split("\n");
 
 my @intervals = [];
 
 for @id-ranges -> $id-range {
-	# say "hello";
-	# say $interval;
 	my $match = Parser.parse($id-range);
 	my $interval = $match<min-val>.Int..$match<max-val>.Int;
 	@intervals.push($interval);
-	# say $interval;
 }
 
-my @final-list-intervals = [];
+# remove if 2 list are overlapping
+# add new list if overlap
+# do it again until the list of interval don't change
 
-for @intervals -> $interval {
-	# my $new-interval;
-	my $fused = False;
-	if @final-list-intervals eq [] {
-		@final-list-intervals.push($interval)
-	} else {
-		for 0..@final-list-intervals.elems -> $i {
-			say @final-list-intervals[$i];
-			my $matching-interval = fuse-interval(@final-list-intervals[$i], $interval);
-			if $matching-interval !eq "No overlap" {
-				@final-list-intervals[$i] = $matching-interval;
-				$fused = True;
-				last;
-			} else {
-				say "hello no match";
+sub fusing-intervals(@intervals) {
+	my @new-list-intervals = @intervals.clone(); # memory copy
+
+	LOOP-LABEL:
+	for 0..@intervals.elems -> $i {
+		for $i..@intervals.elems -> $j {
+			if $i != $j {
+				# say $i," ",$j;
+				my $new-interval = fuse-interval(@intervals[$i], @intervals[$j]);
+				if $new-interval {
+					@new-list-intervals.splice($i, 1);
+					@new-list-intervals.splice($j - 1, 1);
+					@new-list-intervals.push($new-interval);
+					last LOOP-LABEL;
+				}
 			}
 		}
-		if !$fused {
-			@final-list-intervals.push($interval);
-		}
 	}
-	# say @final-list-intervals
+	return @new-list-intervals;
 }
 
-# say @final-list-intervals[0].elems;
+my @new-list-intervals = fusing-intervals(@intervals);
+while @new-list-intervals.elems < @intervals.elems {
+	@intervals = @new-list-intervals;
+	@new-list-intervals = fusing-intervals(@intervals);
+}
 
-# my $combined-interval = @intervals.reduce: &infix:<∪>; # Union
-# say $combined-interval.elems;
+my $sum = 0;
+for @new-list-intervals -> $interval {
+	$sum += $interval.elems;
+}
 
-# my $sum = 0;
-
-# say $sum;
+say $sum;
